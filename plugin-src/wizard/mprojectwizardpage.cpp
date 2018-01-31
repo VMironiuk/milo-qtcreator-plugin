@@ -441,30 +441,40 @@ bool MProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QS
             }
         }
     }
+
     // Add to remote? Now, only for Git
-    // TODO:
-    //  * validate remote URL;
-    //  * check response after command run;
-    //  * maybe move this to another place, or find better solution for implementation
     if (versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
             && !m_ui->gitRepoLineEdit->text().isEmpty()) {
         auto git = MiloPlugin::gitClient();
         VcsBase::VcsCommand command(m_commonDirectory, git->processEnvironment());
         QStringList args = {"remote", "add", "origin", m_ui->gitRepoLineEdit->text()};
-        command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+
+        auto runCommand = [&]() -> bool{
+            auto response = command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+            if (response.result != SynchronousProcessResponse::Finished) {
+                *errorMessage = tr(response.exitMessage(git->vcsBinary().toString(),
+                                                        git->vcsTimeoutS()).toLatin1());
+                return false;
+            }
+            return true;
+        };
+
+        if (!runCommand())
+            return false;
 
         // Push to remote?
         if (m_ui->pushToRemoteCheckBox->isChecked()) {
             // commit...
             args = QStringList{"commit", "-m", "Initial commit"};
-            command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+            if (!runCommand())
+                return false;
 
             // ... and push
             args = QStringList{"push", "-u", "origin", "master"};
-            command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+            if (!runCommand())
+                return false;
         }
-    }
-    return true;
+}    return true;
 }
 
 void MProjectWizardPage::initializeProjectTree(Node *context, const QStringList &paths,
