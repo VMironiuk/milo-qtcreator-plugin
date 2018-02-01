@@ -1,7 +1,7 @@
 #include "miloplugin.h"
 #include "miloconstants.h"
 
-#include "wizard/mjsonsummarypage.h"
+#include "jsonsummarypage.h"
 
 #include <coreplugin/icore.h>
 #include <coreplugin/icontext.h>
@@ -75,7 +75,7 @@ bool MiloPlugin::initialize(const QStringList &arguments, QString *errorString)
     menu->addAction(cmd);
     Core::ActionManager::actionContainer(Core::Constants::M_TOOLS)->addMenu(menu);
 
-    JsonWizardFactory::registerPageFactory(new MSummaryPageFactory);
+    JsonWizardFactory::registerPageFactory(new SummaryPageFactory);
 
     return true;
 }

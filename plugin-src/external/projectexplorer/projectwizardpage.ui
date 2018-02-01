@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Milo::Internal::MWizardPage</class>
- <widget class="QWizardPage" name="Milo::Internal::MWizardPage">
+ <class>ProjectExplorer::Internal::WizardPage</class>
+ <widget class="QWizardPage" name="ProjectExplorer::Internal::WizardPage">
   <property name="geometry">
    <rect>
     <x>0</x>

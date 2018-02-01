@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "mprojectwizardpage.h"
+#include "projectwizardpage.h"
 
 #include <projectexplorer/jsonwizard/jsonwizard.h>
 #include <projectexplorer/jsonwizard/jsonwizardpagefactory.h>
@@ -33,48 +33,44 @@
 #include <QWizardPage>
 
 namespace ProjectExplorer {
+
 class FolderNode;
 class Node;
-}
 
-namespace Milo {
-namespace Internal {
-
-class MSummaryPageFactory : public ProjectExplorer::JsonWizardPageFactory
+class SummaryPageFactory : public ProjectExplorer::JsonWizardPageFactory
 {
 public:
-    MSummaryPageFactory();
+    SummaryPageFactory();
 
     Utils::WizardPage *create(ProjectExplorer::JsonWizard *wizard, Core::Id typeId, const QVariant &data) override;
     bool validateData(Core::Id typeId, const QVariant &data, QString *errorMessage) override;
 };
 
 // Documentation inside.
-class MJsonSummaryPage : public MProjectWizardPage
+class JsonSummaryPage : public Internal::ProjectWizardPage
 {
     Q_OBJECT
 
 public:
-    MJsonSummaryPage(QWidget *parent = nullptr);
+    JsonSummaryPage(QWidget *parent = nullptr);
     void setHideProjectUiValue(const QVariant &hideProjectUiValue);
 
     void initializePage() override;
     bool validatePage() override;
     void cleanupPage() override;
 
-    void triggerCommit(const ProjectExplorer::JsonWizard::GeneratorFiles &files);
-    void addToProject(const ProjectExplorer::JsonWizard::GeneratorFiles &files);
+    void triggerCommit(const JsonWizard::GeneratorFiles &files);
+    void addToProject(const JsonWizard::GeneratorFiles &files);
     void summarySettingsHaveChanged();
 
 private:
-    ProjectExplorer::Node *findWizardContextNode(ProjectExplorer::Node *contextNode) const;
+    Node *findWizardContextNode(Node *contextNode) const;
     void updateFileList();
-    void updateProjectData(ProjectExplorer::FolderNode *node);
+    void updateProjectData(FolderNode *node);
 
-    ProjectExplorer::JsonWizard *m_wizard;
-    ProjectExplorer::JsonWizard::GeneratorFiles m_fileList;
+    JsonWizard *m_wizard;
+    JsonWizard::GeneratorFiles m_fileList;
     QVariant m_hideProjectUiValue;
 };
 
-} // namespace Internal
-} // namespace Milo
+} // namespace ProjectExplorer

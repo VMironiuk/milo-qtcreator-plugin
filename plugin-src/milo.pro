@@ -3,14 +3,17 @@ DEFINES += MILO_LIBRARY
 # Milo files
 
 SOURCES += miloplugin.cpp \
-    wizard/mjsonsummarypage.cpp \
-    wizard/mprojectwizardpage.cpp
+    external/projectexplorer/jsonwizard/jsonsummarypage.cpp \
+    external/projectexplorer/projectwizardpage.cpp
 
 HEADERS += miloplugin.h \
-        milo_global.h \
-        miloconstants.h \
-    wizard/mjsonsummarypage.h \
-    wizard/mprojectwizardpage.h
+    milo_global.h \
+    miloconstants.h \
+    external/projectexplorer/jsonwizard/jsonsummarypage.h \
+    external/projectexplorer/projectwizardpage.h
+
+INCLUDEPATH += external/projectexplorer \
+    external/projectexplorer/jsonwizard
 
 # Qt Creator linking
 
@@ -54,4 +57,4 @@ QTC_PLUGIN_RECOMMENDS += \
 include($$IDE_SOURCE_TREE/src/qtcreatorplugin.pri)
 
 FORMS += \
-    wizard/mprojectwizardpage.ui
+    external/projectexplorer/projectwizardpage.ui

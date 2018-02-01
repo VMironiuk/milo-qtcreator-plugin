@@ -23,8 +23,8 @@
 **
 ****************************************************************************/
 
-#include "mprojectwizardpage.h"
-#include "ui_mprojectwizardpage.h"
+#include "projectwizardpage.h"
+#include "ui_projectwizardpage.h"
 
 #include "miloplugin.h"
 
@@ -36,16 +36,13 @@
 #include <coreplugin/iversioncontrol.h>
 #include <coreplugin/iwizardfactory.h>
 #include <coreplugin/vcsmanager.h>
-
 #include <git/gitclient.h>
-
 #include <utils/algorithm.h>
 #include <utils/fileutils.h>
 #include <utils/qtcassert.h>
 #include <utils/stringutils.h>
 #include <utils/treemodel.h>
 #include <utils/wizard.h>
-
 #include <vcsbase/vcsbaseconstants.h>
 #include <vcsbase/vcscommand.h>
 
@@ -54,17 +51,19 @@
 #include <QTreeView>
 
 /*!
-    \class Milo::Internal::MProjectWizardPage
+    \class ProjectExplorer::Internal::ProjectWizardPage
 
-    \brief The MProjectWizardPage class provides a wizard page showing projects
+    \brief The ProjectWizardPage class provides a wizard page showing projects
     and version control to add new files to.
+
+    \sa ProjectExplorer::Internal::ProjectFileWizardExtension
 */
 
 using namespace Core;
-using namespace ProjectExplorer;
+using namespace Milo::Internal;
 using namespace Utils;
 
-namespace Milo {
+namespace ProjectExplorer {
 namespace Internal {
 
 class AddNewTree : public TreeItem
@@ -282,38 +281,38 @@ static inline AddNewTree *buildAddFilesTree(FolderNode *root, const QStringList 
 }
 
 // --------------------------------------------------------------------
-// MProjectWizardPage:
+// ProjectWizardPage:
 // --------------------------------------------------------------------
 
-MProjectWizardPage::MProjectWizardPage(QWidget *parent) : WizardPage(parent),
-    m_ui(new Ui::MWizardPage)
+ProjectWizardPage::ProjectWizardPage(QWidget *parent) : WizardPage(parent),
+    m_ui(new Ui::WizardPage)
 {
     m_ui->setupUi(this);
     m_ui->vcsManageButton->setText(ICore::msgShowOptionsDialog());
     connect(m_ui->projectComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &MProjectWizardPage::projectChanged);
+            this, &ProjectWizardPage::projectChanged);
     connect(m_ui->addToVersionControlComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &MProjectWizardPage::versionControlChanged);
+            this, &ProjectWizardPage::versionControlChanged);
     connect(m_ui->addToVersionControlComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &MProjectWizardPage::updateGitRepositoryUiElements);
-    connect(m_ui->gitRepoLineEdit, &QLineEdit::textChanged, this, &MProjectWizardPage::updatePushToRemoteUiElements);
-    connect(m_ui->vcsManageButton, &QAbstractButton::clicked, this, &MProjectWizardPage::manageVcs);
+            this, &ProjectWizardPage::updateGitRepositoryUiElements);
+    connect(m_ui->gitRepoLineEdit, &QLineEdit::textChanged, this, &ProjectWizardPage::updatePushToRemoteUiElements);
+    connect(m_ui->vcsManageButton, &QAbstractButton::clicked, this, &ProjectWizardPage::manageVcs);
     setProperty(SHORT_TITLE_PROPERTY, tr("Summary"));
 
     connect(VcsManager::instance(), &VcsManager::configurationChanged,
-            this, &MProjectWizardPage::initializeVersionControls);
+            this, &ProjectExplorer::Internal::ProjectWizardPage::initializeVersionControls);
 
     m_ui->projectComboBox->setModel(&m_model);
 }
 
-MProjectWizardPage::~MProjectWizardPage()
+ProjectWizardPage::~ProjectWizardPage()
 {
     disconnect(m_ui->projectComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-               this, &MProjectWizardPage::projectChanged);
+               this, &ProjectWizardPage::projectChanged);
     delete m_ui;
 }
 
-bool MProjectWizardPage::expandTree(const QModelIndex &root)
+bool ProjectWizardPage::expandTree(const QModelIndex &root)
 {
     bool expand = false;
     if (!root.isValid()) // always expand root
@@ -340,7 +339,7 @@ bool MProjectWizardPage::expandTree(const QModelIndex &root)
     return expand;
 }
 
-void MProjectWizardPage::setBestNode(AddNewTree *tree)
+void ProjectWizardPage::setBestNode(AddNewTree *tree)
 {
     QModelIndex index = tree ? m_model.indexForItem(tree) : QModelIndex();
     m_ui->projectComboBox->setCurrentIndex(index);
@@ -351,20 +350,20 @@ void MProjectWizardPage::setBestNode(AddNewTree *tree)
     }
 }
 
-FolderNode *MProjectWizardPage::currentNode() const
+FolderNode *ProjectWizardPage::currentNode() const
 {
     QVariant v = m_ui->projectComboBox->currentData(Qt::UserRole);
     return v.isNull() ? nullptr : static_cast<FolderNode *>(v.value<void *>());
 }
 
-void MProjectWizardPage::setAddingSubProject(bool addingSubProject)
+void ProjectWizardPage::setAddingSubProject(bool addingSubProject)
 {
     m_ui->projectLabel->setText(addingSubProject ?
                                     tr("Add as a subproject to project:")
                                   : tr("Add to &project:"));
 }
 
-void MProjectWizardPage::initializeVersionControls()
+void ProjectWizardPage::initializeVersionControls()
 {
     // Figure out version control situation:
     // 0) Check that any version control is available
@@ -415,7 +414,7 @@ void MProjectWizardPage::initializeVersionControls()
     }
 }
 
-bool MProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QString *errorMessage)
+bool ProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QString *errorMessage)
 {
     // Add files to  version control (Entry at 0 is 'None').
     const int vcsIndex = versionControlIndex() - 1;
@@ -450,14 +449,14 @@ bool MProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QS
         QStringList args = {"remote", "add", "origin", m_ui->gitRepoLineEdit->text()};
 
         auto runCommand = [&]() -> bool{
-            auto response = command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
-            if (response.result != SynchronousProcessResponse::Finished) {
+                auto response = command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+                if (response.result != SynchronousProcessResponse::Finished) {
                 *errorMessage = tr(response.exitMessage(git->vcsBinary().toString(),
                                                         git->vcsTimeoutS()).toLatin1());
                 return false;
-            }
-            return true;
-        };
+    }
+                return true;
+    };
 
         if (!runCommand())
             return false;
@@ -474,10 +473,11 @@ bool MProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QS
             if (!runCommand())
                 return false;
         }
-}    return true;
+    }
+    return true;
 }
 
-void MProjectWizardPage::initializeProjectTree(Node *context, const QStringList &paths,
+void ProjectWizardPage::initializeProjectTree(Node *context, const QStringList &paths,
                                               IWizardFactory::WizardKind kind,
                                               ProjectAction action)
 {
@@ -510,34 +510,34 @@ void MProjectWizardPage::initializeProjectTree(Node *context, const QStringList 
     m_ui->projectComboBox->setEnabled(m_model.rowCount(QModelIndex()) > 1);
 }
 
-void MProjectWizardPage::setNoneLabel(const QString &label)
+void ProjectWizardPage::setNoneLabel(const QString &label)
 {
     m_ui->projectComboBox->setItemText(0, label);
 }
 
-void MProjectWizardPage::setAdditionalInfo(const QString &text)
+void ProjectWizardPage::setAdditionalInfo(const QString &text)
 {
     m_ui->additionalInfo->setText(text);
     m_ui->additionalInfo->setVisible(!text.isEmpty());
 }
 
-void MProjectWizardPage::setVersionControls(const QStringList &vcs)
+void ProjectWizardPage::setVersionControls(const QStringList &vcs)
 {
     m_ui->addToVersionControlComboBox->clear();
     m_ui->addToVersionControlComboBox->addItems(vcs);
 }
 
-int MProjectWizardPage::versionControlIndex() const
+int ProjectWizardPage::versionControlIndex() const
 {
     return m_ui->addToVersionControlComboBox->currentIndex();
 }
 
-void MProjectWizardPage::setVersionControlIndex(int idx)
+void ProjectWizardPage::setVersionControlIndex(int idx)
 {
     m_ui->addToVersionControlComboBox->setCurrentIndex(idx);
 }
 
-IVersionControl *MProjectWizardPage::currentVersionControl()
+IVersionControl *ProjectWizardPage::currentVersionControl()
 {
     int index = m_ui->addToVersionControlComboBox->currentIndex() - 1; // Subtract "<None>"
     if (index < 0 || index > m_activeVersionControls.count())
@@ -545,7 +545,7 @@ IVersionControl *MProjectWizardPage::currentVersionControl()
     return m_activeVersionControls.at(index);
 }
 
-void MProjectWizardPage::setFiles(const QStringList &fileNames)
+void ProjectWizardPage::setFiles(const QStringList &fileNames)
 {
     if (fileNames.count() == 1)
         m_commonDirectory = QFileInfo(fileNames.first()).absolutePath();
@@ -586,25 +586,25 @@ void MProjectWizardPage::setFiles(const QStringList &fileNames)
     m_ui->filesLabel->setText(fileMessage);
 }
 
-void MProjectWizardPage::setProjectToolTip(const QString &tt)
+void ProjectWizardPage::setProjectToolTip(const QString &tt)
 {
     m_ui->projectComboBox->setToolTip(tt);
     m_ui->projectLabel->setToolTip(tt);
 }
 
-void MProjectWizardPage::projectChanged(int index)
+void ProjectWizardPage::projectChanged(int index)
 {
     setProjectToolTip(index >= 0 && index < m_projectToolTips.size() ?
                       m_projectToolTips.at(index) : QString());
     emit projectNodeChanged();
 }
 
-void MProjectWizardPage::manageVcs()
+void ProjectWizardPage::manageVcs()
 {
     ICore::showOptionsDialog(VcsBase::Constants::VCS_COMMON_SETTINGS_ID, this);
 }
 
-void MProjectWizardPage::hideVersionControlUiElements()
+void ProjectWizardPage::hideVersionControlUiElements()
 {
     m_ui->addToVersionControlLabel->hide();
     m_ui->vcsManageButton->hide();
@@ -614,7 +614,7 @@ void MProjectWizardPage::hideVersionControlUiElements()
     m_ui->pushToRemoteCheckBox->hide();
 }
 
-void MProjectWizardPage::updateGitRepositoryUiElements()
+void ProjectWizardPage::updateGitRepositoryUiElements()
 {
     auto versionControl = currentVersionControl();
     const bool enabled = versionControl != nullptr
@@ -627,7 +627,7 @@ void MProjectWizardPage::updateGitRepositoryUiElements()
         m_ui->gitRepoLineEdit->clear();
 }
 
-void MProjectWizardPage::updatePushToRemoteUiElements(const QString &text)
+void ProjectWizardPage::updatePushToRemoteUiElements(const QString &text)
 {
     auto versionControl = currentVersionControl();
     const bool enabled = versionControl != nullptr
@@ -640,11 +640,11 @@ void MProjectWizardPage::updatePushToRemoteUiElements(const QString &text)
         m_ui->pushToRemoteCheckBox->setChecked(false);
 }
 
-void MProjectWizardPage::setProjectUiVisible(bool visible)
+void ProjectWizardPage::setProjectUiVisible(bool visible)
 {
     m_ui->projectLabel->setVisible(visible);
     m_ui->projectComboBox->setVisible(visible);
 }
 
-} // namespace Milo
+} // namespace Internal
 } // namespace ProjectExplorer

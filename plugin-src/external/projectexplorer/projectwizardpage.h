@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "../milo_global.h"
+#include "milo_global.h"
 
 #include <projectexplorer/projectnodes.h>
 
@@ -42,23 +42,23 @@ QT_END_NAMESPACE
 
 namespace Core { class IVersionControl; }
 
-namespace Milo {
+namespace ProjectExplorer {
 namespace Internal {
 
 class AddNewTree;
 
-namespace Ui { class MWizardPage; }
+namespace Ui { class WizardPage; }
 
 // Documentation inside.
-class MProjectWizardPage : public Utils::WizardPage
+class ProjectWizardPage : public Utils::WizardPage
 {
     Q_OBJECT
 
 public:
-    explicit MProjectWizardPage(QWidget *parent = nullptr);
-    ~MProjectWizardPage() override;
+    explicit ProjectWizardPage(QWidget *parent = nullptr);
+    ~ProjectWizardPage() override;
 
-    ProjectExplorer::FolderNode *currentNode() const;
+    FolderNode *currentNode() const;
 
     void setNoneLabel(const QString &label);
 
@@ -71,9 +71,9 @@ public:
 
     bool runVersionControl(const QList<Core::GeneratedFile> &files, QString *errorMessage);
 
-    void initializeProjectTree(ProjectExplorer::Node *context, const QStringList &paths,
+    void initializeProjectTree(Node *context, const QStringList &paths,
                                Core::IWizardFactory::WizardKind kind,
-                               ProjectExplorer::ProjectAction action);
+                               ProjectAction action);
 
     void initializeVersionControls();
     void setProjectUiVisible(bool visible);
@@ -91,12 +91,12 @@ private:
 
     void setAdditionalInfo(const QString &text);
     void setAddingSubProject(bool addingSubProject);
-    void setBestNode(Milo::Internal::AddNewTree *tree);
+    void setBestNode(ProjectExplorer::Internal::AddNewTree *tree);
     void setVersionControls(const QStringList &);
     void setProjectToolTip(const QString &);
     bool expandTree(const QModelIndex &root);
 
-    Ui::MWizardPage *m_ui;
+    Ui::WizardPage *m_ui;
     QStringList m_projectToolTips;
     Utils::TreeModel<> m_model;
 
@@ -106,4 +106,4 @@ private:
 };
 
 } // namespace Internal
-} // namespace Milo
+} // namespace ProjectExplorer

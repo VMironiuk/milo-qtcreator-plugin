@@ -23,13 +23,14 @@
 **
 ****************************************************************************/
 
-#include "mjsonsummarypage.h"
+#include "jsonsummarypage.h"
 
+//#include "jsonwizard.h"
 #include <projectexplorer/project.h>
 #include <projectexplorer/projectexplorerconstants.h>
 #include <projectexplorer/projectnodes.h>
-#include <projectexplorer/session.h>
 #include <projectexplorer/projecttree.h>
+#include <projectexplorer/session.h>
 
 #include <coreplugin/coreconstants.h>
 #include <coreplugin/iversioncontrol.h>
@@ -41,15 +42,13 @@
 #include <QMessageBox>
 
 using namespace Core;
-using namespace ProjectExplorer;
 
 static char KEY_SELECTED_PROJECT[] = "SelectedProject";
 static char KEY_SELECTED_NODE[] = "SelectedFolderNode";
 static char KEY_IS_SUBPROJECT[] = "IsSubproject";
 static char KEY_VERSIONCONTROL[] = "VersionControl";
 
-namespace Milo {
-namespace Internal {
+namespace ProjectExplorer {
 
 // --------------------------------------------------------------------
 // Helper:
@@ -77,34 +76,34 @@ static IWizardFactory::WizardKind wizardKind(JsonWizard *wiz)
 }
 
 // --------------------------------------------------------------------
-// MSummaryPageFactory:
+// SummaryPageFactory:
 // --------------------------------------------------------------------
 
 static const char KEY_HIDE_PROJECT_UI[] = "hideProjectUi";
 
-MSummaryPageFactory::MSummaryPageFactory()
+SummaryPageFactory::SummaryPageFactory()
 {
     setTypeIdsSuffix(QLatin1String("MiloSummary"));
 }
 
-Utils::WizardPage *MSummaryPageFactory::create(JsonWizard *wizard, Core::Id typeId, const QVariant &data)
+Utils::WizardPage *SummaryPageFactory::create(JsonWizard *wizard, Core::Id typeId, const QVariant &data)
 {
     Q_UNUSED(wizard);
     Q_UNUSED(data);
     QTC_ASSERT(canCreate(typeId), return nullptr);
 
-    auto page = new MJsonSummaryPage;
+    auto page = new JsonSummaryPage;
     QVariant hideProjectUi = data.toMap().value(QLatin1String(KEY_HIDE_PROJECT_UI));
     page->setHideProjectUiValue(hideProjectUi);
     return page;
 }
 
-bool MSummaryPageFactory::validateData(Core::Id typeId, const QVariant &data, QString *errorMessage)
+bool SummaryPageFactory::validateData(Core::Id typeId, const QVariant &data, QString *errorMessage)
 {
     QTC_ASSERT(canCreate(typeId), return false);
     if (!data.isNull() && (data.type() != QVariant::Map)) {
         *errorMessage = QCoreApplication::translate("ProjectExplorer::JsonWizard",
-            "\"data\" for a \"Summary\" page can be unset or needs to be an object.");
+            "\"data\" for a \"MiloSummary\" page can be unset or needs to be an object.");
         return false;
     }
 
@@ -112,25 +111,25 @@ bool MSummaryPageFactory::validateData(Core::Id typeId, const QVariant &data, QS
 }
 
 // --------------------------------------------------------------------
-// MJsonSummaryPage:
+// JsonSummaryPage:
 // --------------------------------------------------------------------
 
-MJsonSummaryPage::MJsonSummaryPage(QWidget *parent) :
-    MProjectWizardPage(parent),
+JsonSummaryPage::JsonSummaryPage(QWidget *parent) :
+    Internal::ProjectWizardPage(parent),
     m_wizard(nullptr)
 {
-    connect(this, &MProjectWizardPage::projectNodeChanged,
-            this, &MJsonSummaryPage::summarySettingsHaveChanged);
-    connect(this, &MProjectWizardPage::versionControlChanged,
-            this, &MJsonSummaryPage::summarySettingsHaveChanged);
+    connect(this, &Internal::ProjectWizardPage::projectNodeChanged,
+            this, &JsonSummaryPage::summarySettingsHaveChanged);
+    connect(this, &Internal::ProjectWizardPage::versionControlChanged,
+            this, &JsonSummaryPage::summarySettingsHaveChanged);
 }
 
-void MJsonSummaryPage::setHideProjectUiValue(const QVariant &hideProjectUiValue)
+void JsonSummaryPage::setHideProjectUiValue(const QVariant &hideProjectUiValue)
 {
     m_hideProjectUiValue = hideProjectUiValue;
 }
 
-void MJsonSummaryPage::initializePage()
+void JsonSummaryPage::initializePage()
 {
     m_wizard = qobject_cast<JsonWizard *>(wizard());
     QTC_ASSERT(m_wizard, return);
@@ -140,8 +139,8 @@ void MJsonSummaryPage::initializePage()
     m_wizard->setValue(QLatin1String(KEY_IS_SUBPROJECT), false);
     m_wizard->setValue(QLatin1String(KEY_VERSIONCONTROL), QString());
 
-    connect(m_wizard, &JsonWizard::filesReady, this, &MJsonSummaryPage::triggerCommit);
-    connect(m_wizard, &JsonWizard::filesReady, this, &MJsonSummaryPage::addToProject);
+    connect(m_wizard, &JsonWizard::filesReady, this, &JsonSummaryPage::triggerCommit);
+    connect(m_wizard, &JsonWizard::filesReady, this, &JsonSummaryPage::addToProject);
 
     updateFileList();
 
@@ -164,7 +163,7 @@ void MJsonSummaryPage::initializePage()
 
     // Use static cast from void * to avoid qobject_cast (which needs a valid object) in value()
     // in the following code:
-    auto contextNode = findWizardContextNode(static_cast<Node *>(m_wizard->value(ProjectExplorer::Constants::PREFERRED_PROJECT_NODE).value<void *>()));
+    auto contextNode = findWizardContextNode(static_cast<Node *>(m_wizard->value(Constants::PREFERRED_PROJECT_NODE).value<void *>()));
     const ProjectAction currentAction = isProject ? AddSubProject : AddNewFile;
 
     initializeProjectTree(contextNode, files, kind, currentAction);
@@ -185,19 +184,19 @@ void MJsonSummaryPage::initializePage()
     summarySettingsHaveChanged();
 }
 
-bool MJsonSummaryPage::validatePage()
+bool JsonSummaryPage::validatePage()
 {
     m_wizard->commitToFileList(m_fileList);
     m_fileList.clear();
     return true;
 }
 
-void MJsonSummaryPage::cleanupPage()
+void JsonSummaryPage::cleanupPage()
 {
     disconnect(m_wizard, &JsonWizard::filesReady, this, nullptr);
 }
 
-void MJsonSummaryPage::triggerCommit(const JsonWizard::GeneratorFiles &files)
+void JsonSummaryPage::triggerCommit(const JsonWizard::GeneratorFiles &files)
 {
     GeneratedFiles coreFiles
             = Utils::transform(files, [](const JsonWizard::GeneratorFile &f) -> GeneratedFile
@@ -211,7 +210,7 @@ void MJsonSummaryPage::triggerCommit(const JsonWizard::GeneratorFiles &files)
     }
 }
 
-void MJsonSummaryPage::addToProject(const JsonWizard::GeneratorFiles &files)
+void JsonSummaryPage::addToProject(const JsonWizard::GeneratorFiles &files)
 {
     QTC_CHECK(m_fileList.isEmpty()); // Happens after this page is done
     QString generatedProject = generatedProjectFilePath(files);
@@ -245,7 +244,7 @@ void MJsonSummaryPage::addToProject(const JsonWizard::GeneratorFiles &files)
     return;
 }
 
-void MJsonSummaryPage::summarySettingsHaveChanged()
+void JsonSummaryPage::summarySettingsHaveChanged()
 {
     IVersionControl *vc = currentVersionControl();
     m_wizard->setValue(QLatin1String(KEY_VERSIONCONTROL), vc ? vc->id().toString() : QString());
@@ -253,15 +252,15 @@ void MJsonSummaryPage::summarySettingsHaveChanged()
     updateProjectData(currentNode());
 }
 
-ProjectExplorer::Node *MJsonSummaryPage::findWizardContextNode(Node *contextNode) const
+Node *JsonSummaryPage::findWizardContextNode(Node *contextNode) const
 {
     if (contextNode && !ProjectTree::hasNode(contextNode)) {
         contextNode = nullptr;
 
         // Static cast from void * to avoid qobject_cast (which needs a valid object) in value().
-        auto project = static_cast<Project *>(m_wizard->value(ProjectExplorer::Constants::PROJECT_POINTER).value<void *>());
+        auto project = static_cast<Project *>(m_wizard->value(Constants::PROJECT_POINTER).value<void *>());
         if (SessionManager::projects().contains(project) && project->rootProjectNode()) {
-            const QString path = m_wizard->value(ProjectExplorer::Constants::PREFERRED_PROJECT_NODE_PATH).toString();
+            const QString path = m_wizard->value(Constants::PREFERRED_PROJECT_NODE_PATH).toString();
             contextNode = project->rootProjectNode()->findNode([path](const Node *n) {
                 return path == n->filePath().toString();
             });
@@ -270,7 +269,7 @@ ProjectExplorer::Node *MJsonSummaryPage::findWizardContextNode(Node *contextNode
     return contextNode;
 }
 
-void MJsonSummaryPage::updateFileList()
+void JsonSummaryPage::updateFileList()
 {
     m_fileList = m_wizard->generateFileList();
     QStringList filePaths
@@ -278,7 +277,7 @@ void MJsonSummaryPage::updateFileList()
     setFiles(filePaths);
 }
 
-void MJsonSummaryPage::updateProjectData(FolderNode *node)
+void JsonSummaryPage::updateProjectData(FolderNode *node)
 {
     Project *project = SessionManager::projectForNode(node);
 
@@ -289,5 +288,4 @@ void MJsonSummaryPage::updateProjectData(FolderNode *node)
     updateFileList();
 }
 
-} // namespace Internal
-} // namespace Milo
+} // namespace ProjectExplorer
