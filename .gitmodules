@@ -1,4 +1,3 @@
-[submodule "dependencies/4.5/src/qt-creator"]
-	path = dependencies/4.5/src/qt-creator
+[submodule "dependencies/src/qt-creator"]
+	path = dependencies/src/qt-creator
 	url = https://github.com/VMironiuk/qt-creator.git
-	branch = 4.5
