@@ -87,6 +87,7 @@ private:
     void manageVcs();
     void hideVersionControlUiElements();
     void updateGitRepositoryUiElements();
+    void updateInitialCommitUiElements();
     void updatePushToRemoteUiElements(const QString &text);
 
     void setAdditionalInfo(const QString &text);

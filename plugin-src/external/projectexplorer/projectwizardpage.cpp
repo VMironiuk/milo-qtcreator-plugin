@@ -295,7 +295,8 @@ ProjectWizardPage::ProjectWizardPage(QWidget *parent) : WizardPage(parent),
     connect(m_ui->addToVersionControlComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &ProjectWizardPage::versionControlChanged);
     connect(m_ui->addToVersionControlComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &ProjectWizardPage::updateGitRepositoryUiElements);
+            this, &ProjectWizardPage::updateInitialCommitUiElements);
+    connect(m_ui->initialCommitCheckBox, &QCheckBox::toggled, this, &ProjectWizardPage::updateGitRepositoryUiElements);
     connect(m_ui->gitRepoLineEdit, &QLineEdit::textChanged, this, &ProjectWizardPage::updatePushToRemoteUiElements);
     connect(m_ui->vcsManageButton, &QAbstractButton::clicked, this, &ProjectWizardPage::manageVcs);
     setProperty(SHORT_TITLE_PROPERTY, tr("Summary"));
@@ -442,39 +443,52 @@ bool ProjectWizardPage::runVersionControl(const QList<GeneratedFile> &files, QSt
         }
     }
 
-    // Add to remote? Now, only for Git
-    if (versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
-            && !m_ui->gitRepoLineEdit->text().isEmpty()) {
-        auto git = MiloPlugin::gitClient();
-        VcsBase::VcsCommand command(m_commonDirectory, git->processEnvironment());
-        QStringList args = {"remote", "add", "origin", m_ui->gitRepoLineEdit->text()};
+    // Starting point for custom operations
+    auto git = MiloPlugin::gitClient();
+    if (git == nullptr) {
+        *errorMessage = "GitClient object is not valid.";
+        return false;
+    }
+    VcsBase::VcsCommand command(m_commonDirectory, git->processEnvironment());
+    QStringList args;
 
-        auto runCommand = [&]() -> bool{
-                auto response = command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
-                if (response.result != SynchronousProcessResponse::Finished) {
+    auto runCommand = [&]() -> bool {
+            auto response = command.runCommand(git->vcsBinary(), args, git->vcsTimeoutS());
+            if (response.result != SynchronousProcessResponse::Finished) {
                 *errorMessage = tr(response.exitMessage(git->vcsBinary().toString(),
                                                         git->vcsTimeoutS()).toLatin1());
                 return false;
-    }
-                return true;
+            }
+            return true;
     };
 
+    // Do initial commit?
+    if (versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
+            && m_ui->initialCommitCheckBox->isChecked()) {
+        args = QStringList{"commit", "-m", "Initial commit"};
         if (!runCommand())
             return false;
-
-        // Push to remote?
-        if (m_ui->pushToRemoteCheckBox->isChecked()) {
-            // commit...
-            args = QStringList{"commit", "-m", "Initial commit"};
-            if (!runCommand())
-                return false;
-
-            // ... and push
-            args = QStringList{"push", "-u", "origin", "master"};
-            if (!runCommand())
-                return false;
-        }
     }
+
+    // Add to remote?
+    if (versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
+            && m_ui->initialCommitCheckBox->isChecked()
+            && !m_ui->gitRepoLineEdit->text().isEmpty()) {
+        args = QStringList{"remote", "add", "origin", m_ui->gitRepoLineEdit->text()};
+        if (!runCommand())
+            return false;
+    }
+
+    // Push to remote?
+    if (versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
+            && m_ui->initialCommitCheckBox->isChecked()
+            && !m_ui->gitRepoLineEdit->text().isEmpty()
+            && m_ui->pushToRemoteCheckBox->isChecked()) {
+        args = QStringList{"push", "-u", "origin", "master"};
+        if (!runCommand())
+            return false;
+    }
+
     return true;
 }
 
@@ -612,6 +626,7 @@ void ProjectWizardPage::hideVersionControlUiElements()
     m_ui->addToVersionControlComboBox->hide();
     m_ui->gitRepoLabel->hide();
     m_ui->gitRepoLineEdit->hide();
+    m_ui->initialCommitCheckBox->hide();
     m_ui->pushToRemoteCheckBox->hide();
 }
 
@@ -619,7 +634,8 @@ void ProjectWizardPage::updateGitRepositoryUiElements()
 {
     auto versionControl = currentVersionControl();
     const bool enabled = versionControl != nullptr
-            && versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT);
+            && versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
+            && m_ui->initialCommitCheckBox->isChecked();
 
     m_ui->gitRepoLabel->setEnabled(enabled);
     m_ui->gitRepoLineEdit->setEnabled(enabled);
@@ -628,11 +644,24 @@ void ProjectWizardPage::updateGitRepositoryUiElements()
         m_ui->gitRepoLineEdit->clear();
 }
 
+void ProjectWizardPage::updateInitialCommitUiElements()
+{
+    auto versionControl = currentVersionControl();
+    const bool enabled = versionControl != nullptr
+            && versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT);
+
+    m_ui->initialCommitCheckBox->setEnabled(enabled);
+
+    if (!enabled)
+        m_ui->initialCommitCheckBox->setChecked(false);
+}
+
 void ProjectWizardPage::updatePushToRemoteUiElements(const QString &text)
 {
     auto versionControl = currentVersionControl();
     const bool enabled = versionControl != nullptr
             && versionControl->id() == Core::Id(VcsBase::Constants::VCS_ID_GIT)
+            && m_ui->initialCommitCheckBox->isChecked()
             && !text.isEmpty();
 
     m_ui->pushToRemoteCheckBox->setEnabled(enabled);
