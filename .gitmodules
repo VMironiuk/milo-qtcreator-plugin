@@ -1,3 +1,3 @@
 [submodule "dependencies/src/qt-creator"]
 	path = dependencies/src/qt-creator
-	url = https://github.com/VMironiuk/qt-creator.git
+	url = https://github.com/qt-creator/qt-creator.git
