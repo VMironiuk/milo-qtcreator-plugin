@@ -26,6 +26,8 @@
 #include "projectwizardpage.h"
 #include "ui_projectwizardpage.h"
 
+#include "gitclient.h"
+
 #include "miloplugin.h"
 
 #include <projectexplorer/project.h>
@@ -36,7 +38,6 @@
 #include <coreplugin/iversioncontrol.h>
 #include <coreplugin/iwizardfactory.h>
 #include <coreplugin/vcsmanager.h>
-#include <git/gitclient.h>
 #include <utils/algorithm.h>
 #include <utils/fileutils.h>
 #include <utils/qtcassert.h>

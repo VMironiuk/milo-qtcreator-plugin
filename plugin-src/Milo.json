@@ -32,7 +32,6 @@ SOFTWARE.",
     "Dependencies" : [
         { "Name" : "Core", "Version" : "4.5.0" },
         { "Name" : "ProjectExplorer", "Version" : "4.5.0" },
-        { "Name" : "VcsBase", "Version" : "4.5.0" },
-        { "Name" : "Git", "Version" : "4.5.0" }
+        { "Name" : "VcsBase", "Version" : "4.5.0" }
     ]
 }

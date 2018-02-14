@@ -4,16 +4,21 @@ DEFINES += MILO_LIBRARY
 
 SOURCES += miloplugin.cpp \
     external/projectexplorer/jsonwizard/jsonsummarypage.cpp \
-    external/projectexplorer/projectwizardpage.cpp
+    external/projectexplorer/projectwizardpage.cpp \
+    external/git/gitclient.cpp \
+    external/git/gitsettings.cpp
 
 HEADERS += miloplugin.h \
     milo_global.h \
     miloconstants.h \
     external/projectexplorer/jsonwizard/jsonsummarypage.h \
-    external/projectexplorer/projectwizardpage.h
+    external/projectexplorer/projectwizardpage.h \
+    external/git/gitclient.h \
+    external/git/gitsettings.h
 
 INCLUDEPATH += external/projectexplorer \
-    external/projectexplorer/jsonwizard
+    external/projectexplorer/jsonwizard \
+    external/git
 
 # Qt Creator linking
 
@@ -46,8 +51,7 @@ QTC_LIB_DEPENDS += \
 QTC_PLUGIN_DEPENDS += \
     coreplugin \
     projectexplorer \
-    vcsbase \
-    git
+    vcsbase
 
 QTC_PLUGIN_RECOMMENDS += \
     # optional plugin dependencies. nothing here at this time

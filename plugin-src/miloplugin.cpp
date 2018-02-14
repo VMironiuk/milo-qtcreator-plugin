@@ -1,6 +1,8 @@
 #include "miloplugin.h"
 #include "miloconstants.h"
 
+#include "gitclient.h"
+
 #include "jsonsummarypage.h"
 
 #include <coreplugin/icore.h>
@@ -9,8 +11,6 @@
 #include <coreplugin/actionmanager/command.h>
 #include <coreplugin/actionmanager/actioncontainer.h>
 #include <coreplugin/coreconstants.h>
-
-#include <git/gitclient.h>
 
 #include <projectexplorer/jsonwizard/jsonwizardfactory.h>
 
