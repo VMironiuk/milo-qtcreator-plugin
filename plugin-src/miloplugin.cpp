@@ -64,17 +64,6 @@ bool MiloPlugin::initialize(const QStringList &arguments, QString *errorString)
 
     m_gitClient = new GitClient;
 
-    auto action = new QAction(tr("Milo Action"), this);
-    Core::Command *cmd = Core::ActionManager::registerAction(action, Constants::ACTION_ID,
-                                                             Core::Context(Core::Constants::C_GLOBAL));
-    cmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+Alt+Meta+A")));
-    connect(action, &QAction::triggered, this, &MiloPlugin::triggerAction);
-
-    Core::ActionContainer *menu = Core::ActionManager::createMenu(Constants::MENU_ID);
-    menu->menu()->setTitle(tr("Milo"));
-    menu->addAction(cmd);
-    Core::ActionManager::actionContainer(Core::Constants::M_TOOLS)->addMenu(menu);
-
     JsonWizardFactory::registerPageFactory(new SummaryPageFactory);
 
     return true;
@@ -93,13 +82,6 @@ ExtensionSystem::IPlugin::ShutdownFlag MiloPlugin::aboutToShutdown()
     // Disconnect from signals that are not needed during shutdown
     // Hide UI (if you add UI that is not in the main window directly)
     return SynchronousShutdown;
-}
-
-void MiloPlugin::triggerAction()
-{
-    QMessageBox::information(Core::ICore::mainWindow(),
-                             tr("Action Triggered"),
-                             tr("This is an action from Milo."));
 }
 
 } // namespace Internal

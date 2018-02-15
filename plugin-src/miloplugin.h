@@ -30,9 +30,6 @@ public:
     ShutdownFlag aboutToShutdown() override;
 
 private:
-    void triggerAction();
-
-private:
     Git::Internal::GitClient *m_gitClient = nullptr;
 };
 
